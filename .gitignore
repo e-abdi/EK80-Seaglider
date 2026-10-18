@@ -1,0 +1,8 @@
+README.private.md
+
+# KiCad local state, locks and backups
+*.kicad_prl
+*.lck
+*-backups/
+fp-info-cache
+\#auto_saved_files\#

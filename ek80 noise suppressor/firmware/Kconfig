@@ -1,0 +1,74 @@
+# EK80 noise suppressor configuration options.
+#
+# Override the defaults in prj.conf or with -DCONFIG_...=... on the west
+# command line.
+
+mainmenu "EK80 noise suppressor"
+
+menu "EK80 noise suppressor"
+
+config EK80_GLIDER_BAUD
+	int "Glider port baud rate"
+	default 38400
+	help
+	  Must match the 'baud=' line of the glider's logdev .cnf file.
+
+config EK80_SENSOR_BAUD
+	int "EK80 (RS-422) port baud rate"
+	default 38400
+
+config EK80_GLIDER_LINE_MAX
+	int "Maximum glider command line length"
+	default 64
+	range 32 512
+	help
+	  Longer lines are dropped up to the next line end.
+
+config EK80_SENSOR_LINE_MAX
+	int "Maximum EK80 line length"
+	default 256
+	range 64 2048
+	help
+	  Longer lines are dropped up to the next line end. Only affects live output and PING_OK
+	  detection; the prompts are short.
+
+config EK80_RELAY_PULSE_MS
+	int "Latching relay coil pulse length"
+	default 500
+
+config EK80_WAKE_DELAY_MS
+	int "Delay between the EK80 HANDSHAKE and the 'wake' command"
+	default 500
+
+config EK80_RUN_CMD
+	string "Command that starts acquisition"
+	default "RUN ENSEMBLE 1"
+
+config EK80_VBAT_DIVIDER_X1000
+	int "Pack voltage divider ratio x1000 ((R45 + R46) / R46)"
+	default 5167
+	help
+	  R45 = 10k, R46 = 2.4k gives 12.4 / 2.4 = 5.167.
+
+config EK80_VBAT_CAL_PERMILLE
+	int "Pack voltage calibration factor (per mille)"
+	default 1000
+	help
+	  Scales the measured voltage, to calibrate against a meter.
+
+config EK80_VBAT_SAMPLES
+	int "ADC samples averaged per pack voltage reading"
+	default 16
+	range 1 256
+
+config EK80_WATCHDOG_TIMEOUT_MS
+	int "Hardware watchdog timeout (0 = disabled)"
+	default 4000
+
+endmenu
+
+module = EK80
+module-str = ek80
+source "subsys/logging/Kconfig.template.log_config"
+
+source "Kconfig.zephyr"

@@ -1,0 +1,96 @@
+/*
+ * EK80 noise suppressor V3.0 (pcb/ek80-pico) on a Raspberry Pi Pico.
+ *
+ *   GP16/GP17  UART0  EK80, through RS-422 transceiver U1, J3
+ *   GP20/GP21  UART1  glider, through optocouplers U5/U2 and MAX3221 U4, J2
+ *   GP27              net RELAY_RESET (Q2): pulse connects the pack to the EK80
+ *   GP22              net RELAY_SET   (Q1): pulse connects the pack to the charger
+ *   GP26  ADC0        pack voltage, R45/R46 divider (10k / 2.4k)
+ *   GP28              net PRES via JP2 (bq77915 PRES), held low
+ *   GP18/GP19  I2C1   J6 (external BQ76920 board), not used by the firmware
+ *   GP14/GP15         J6 ALM (input) / BOOT, not used by the firmware
+ *
+ * Note the relay net names: a pulse on net RELAY_RESET powers the EK80 and
+ * one on RELAY_SET switches it off. The GPIOs are named by what they do.
+ */
+#include <dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
+
+/ {
+	chosen {
+		ek80,glider-uart = &uart1;
+		ek80,sensor-uart = &uart0;
+	};
+
+	zephyr,user {
+		ek80-on-gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;
+		ek80-off-gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+		bms-pres-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
+		io-channels = <&adc 0>;
+	};
+};
+
+&pinctrl {
+	uart0_ek80: uart0_ek80 {
+		group1 {
+			pinmux = <UART0_TX_P16>;
+		};
+		group2 {
+			pinmux = <UART0_RX_P17>;
+			input-enable;
+		};
+	};
+
+	uart1_ek80: uart1_ek80 {
+		group1 {
+			pinmux = <UART1_TX_P20>;
+		};
+		group2 {
+			pinmux = <UART1_RX_P21>;
+			input-enable;
+		};
+	};
+
+	/* Only GP26 is analog; GP27/GP28 are used as digital outputs */
+	adc_ek80: adc_ek80 {
+		group1 {
+			pinmux = <ADC_CH0_P26>;
+			input-enable;
+		};
+	};
+};
+
+/* Baud rates are applied at runtime from Kconfig */
+&uart0 {
+	status = "okay";
+	current-speed = <38400>;
+	pinctrl-0 = <&uart0_ek80>;
+	pinctrl-names = "default";
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <38400>;
+	pinctrl-0 = <&uart1_ek80>;
+	pinctrl-names = "default";
+};
+
+&adc {
+	status = "okay";
+	pinctrl-0 = <&adc_ek80>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};
+
+/* The board default puts I2C0 on GP4/GP5; nothing is connected there */
+&i2c0 {
+	status = "disabled";
+};
